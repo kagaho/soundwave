@@ -1,0 +1,13 @@
+# pvc-hf-cache-vllm.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hf-cache-vllm
+  namespace: ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-hostpath
+  resources:
+    requests:
+      storage: 30Gi

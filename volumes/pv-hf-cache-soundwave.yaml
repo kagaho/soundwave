@@ -1,0 +1,40 @@
+# =============================================================================
+# HuggingFace Cache Storage for soundwave (Qwen3-8B Agent)
+# hostPath volume pinned to soundwave via nodeAffinity
+# =============================================================================
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-hf-cache-soundwave
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-hostpath
+  hostPath:
+    path: /var/lib/vllm/hf-cache
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - soundwave
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hf-cache-soundwave
+  namespace: ai
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-hostpath
+  resources:
+    requests:
+      storage: 30Gi

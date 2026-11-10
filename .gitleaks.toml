@@ -1,0 +1,20 @@
+title = "Soundwave release scanning"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "soundwave-tavily-token"
+description = "Tavily credential"
+regex = '''tvly-[A-Za-z0-9_-]{15,}'''
+
+[[rules]]
+id = "soundwave-dashboard-token"
+description = "Credential embedded in dashboard URL"
+regex = '''[#?]token=([A-Za-z0-9_-]{20,})'''
+secretGroup = 1
+
+[[rules]]
+id = "soundwave-kubeadm-bootstrap-token"
+description = "Kubernetes bootstrap credential"
+regex = '''--token[ =]+([a-z0-9]{6}\.[a-z0-9]{16})'''
+secretGroup = 1

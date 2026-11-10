@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-gw-config
+  namespace: ai
+data:
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+      maxconn 4096
+
+    defaults
+      log global
+      mode http
+      option httplog
+      timeout connect 5s
+      timeout client  60s
+      timeout server  60s
+
+    frontend fe_http
+      bind *:8080
+      http-request set-header X-Forwarded-Proto http
+      default_backend be_openwebui
+
+    backend be_openwebui
+      balance roundrobin
+      server s1 open-webui.ai.svc.cluster.local:8080 check

@@ -1,0 +1,136 @@
+# =============================================================================
+# Gmail MCP Server (FIXED)
+# Node: thundercracker (x86_64, No GPU)
+# The @gongrzhe/server-gmail-autoauth-mcp package expects:
+#   - /root/.gmail-mcp/gcp-oauth.keys.json  (OAuth credentials)
+#   - /root/.gmail-mcp/credentials.json     (saved token, auto-created)
+# =============================================================================
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gmail-mcp-config
+  namespace: ai
+data:
+  config.json: |
+    {
+      "mcpServers": {
+        "gmail": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@gongrzhe/server-gmail-autoauth-mcp"
+          ]
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmail-mcp
+  namespace: ai
+  labels:
+    app: gmail-mcp
+    role: mcp-server
+    tier: tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gmail-mcp
+  template:
+    metadata:
+      labels:
+        app: gmail-mcp
+        role: mcp-server
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thundercracker
+      initContainers:
+      - name: setup-auth
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /gmail-mcp
+          cp /secrets/gcp-oauth.keys.json /gmail-mcp/gcp-oauth.keys.json
+          if [ -f /secrets/token.json ]; then
+            cp /secrets/token.json /gmail-mcp/credentials.json
+          fi
+          chmod -R 644 /gmail-mcp/*
+          ls -la /gmail-mcp/
+        volumeMounts:
+        - name: oauth-secrets
+          mountPath: /secrets
+          readOnly: true
+        - name: gmail-data
+          mountPath: /gmail-mcp
+      containers:
+      - name: mcpo
+        image: ghcr.io/open-webui/mcpo:main
+        args:
+        - "mcpo"
+        - "--port"
+        - "8100"
+        - "--config"
+        - "/config/config.json"
+        ports:
+        - containerPort: 8100
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: mcp-config
+          mountPath: /config
+          readOnly: true
+        - name: gmail-data
+          mountPath: /root/.gmail-mcp
+        readinessProbe:
+          httpGet:
+            path: /docs
+            port: 8100
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8100
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: mcp-config
+        configMap:
+          name: gmail-mcp-config
+      - name: oauth-secrets
+        secret:
+          secretName: google-oauth-gmail
+      - name: gmail-data
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gmail-mcp
+  namespace: ai
+  labels:
+    app: gmail-mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: gmail-mcp
+  ports:
+  - name: http
+    port: 8100
+    targetPort: 8100
+    protocol: TCP

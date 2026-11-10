@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shockwave-gpu-debug
+  namespace: ai
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: shockwave
+  restartPolicy: Never
+  containers:
+  - name: debug
+    image: nvcr.io/nvidia/cuda:13.0.2-runtime-ubuntu24.04
+    command: ["/bin/bash", "-lc", "sleep infinity"]
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: dev-nvidia0
+      mountPath: /dev/nvidia0
+    - name: dev-nvidia1
+      mountPath: /dev/nvidia1
+    - name: dev-nvidiactl
+      mountPath: /dev/nvidiactl
+    - name: dev-nvidia-modeset
+      mountPath: /dev/nvidia-modeset
+    - name: dev-nvidia-uvm
+      mountPath: /dev/nvidia-uvm
+    - name: dev-nvidia-uvm-tools
+      mountPath: /dev/nvidia-uvm-tools
+    - name: nvidia-libdir
+      mountPath: /usr/lib/aarch64-linux-gnu/nvidia
+      readOnly: true
+
+  volumes:
+  - name: dev-nvidia0
+    hostPath:
+      path: /dev/nvidia0
+      type: CharDevice
+  - name: dev-nvidia1
+    hostPath:
+      path: /dev/nvidia1
+      type: CharDevice
+  - name: dev-nvidiactl
+    hostPath:
+      path: /dev/nvidiactl
+      type: CharDevice
+  - name: dev-nvidia-modeset
+    hostPath:
+      path: /dev/nvidia-modeset
+      type: CharDevice
+  - name: dev-nvidia-uvm
+    hostPath:
+      path: /dev/nvidia-uvm
+      type: CharDevice
+  - name: dev-nvidia-uvm-tools
+    hostPath:
+      path: /dev/nvidia-uvm-tools
+      type: CharDevice    
+  - name: nvidia-libdir
+    hostPath:
+      path: /usr/lib/aarch64-linux-gnu/nvidia
+      type: Directory

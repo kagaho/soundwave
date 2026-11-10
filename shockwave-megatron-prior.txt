@@ -1,0 +1,34 @@
+rteixeira@shockwave:~$ docker ps
+CONTAINER ID   IMAGE                                       COMMAND                  CREATED       STATUS                 PORTS                                                                                                NAMES
+003cfd65a107   elita-mcp-lab-mcp-rag                       "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7001->7001/tcp, [::]:7001->7001/tcp                                                          mcp-rag
+8b635b669cc4   elita-mcp-lab-mcp-fs                        "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7004->7004/tcp, [::]:7004->7004/tcp                                                          mcp-fs
+cbec4fbd854f   elita-mcp-lab-mcp-git                       "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7005->7005/tcp, [::]:7005->7005/tcp                                                          mcp-git
+509f8f7bd3ee   elita-mcp-lab-mcp-sandbox                   "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7002->7002/tcp, [::]:7002->7002/tcp                                                          mcp-sandbox
+9426cc43addf   elita-mcp-lab-mcp-email                     "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7006->7006/tcp, [::]:7006->7006/tcp                                                          mcp-email
+7bab2be16ee0   elita-mcp-lab-mcp-web                       "python /app/server.…"   13 days ago   Up 13 days             0.0.0.0:7003->7003/tcp, [::]:7003->7003/tcp                                                          mcp-web
+cd5fa9593aa6   elita-mcp-lab-orchestrator                  "uvicorn app:app --h…"   13 days ago   Up 13 days             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp                                                          orchestrator
+165c3428b010   ghcr.io/open-webui/open-webui:main          "bash start.sh"          13 days ago   Up 13 days (healthy)   0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp                                                          openwebui
+8d686561e6b7   axllent/mailpit:latest                      "/mailpit"               13 days ago   Up 13 days (healthy)   0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp, 1110/tcp   mailpit
+3bb98019e36a   ollama/ollama:latest                        "/bin/ollama serve"      13 days ago   Up 13 days             0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp                                                      ollama
+df96f0158a2e   searxng/searxng:latest                      "/usr/local/searxng/…"   13 days ago   Up 13 days             0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp                                                          searxng
+18b0dd35e4d6   nvcr.io/nvidia/tritonserver:24.06-py3-sdk   "/opt/nvidia/nvidia_…"   4 weeks ago   Up 3 days                                                                                                                   elated_turing
+rteixeira@shockwave:~$
+rteixeira@shockwave:~$ docker stop $(docker ps -q)
+003cfd65a107
+8b635b669cc4
+cbec4fbd854f
+509f8f7bd3ee
+9426cc43addf
+7bab2be16ee0
+cd5fa9593aa6
+165c3428b010
+8d686561e6b7
+3bb98019e36a
+df96f0158a2e
+18b0dd35e4d6
+
+rteixeira@megatron:~$ docker ps
+CONTAINER ID   IMAGE                                  COMMAND           CREATED       STATUS                 PORTS                                           NAMES
+bbd080ac2a26   ghcr.io/open-webui/open-webui:ollama   "bash start.sh"   3 weeks ago   Up 11 days (healthy)   0.0.0.0:12000->8080/tcp, [::]:12000->8080/tcp   open-webui
+
+

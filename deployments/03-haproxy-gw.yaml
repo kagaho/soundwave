@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haproxy-gw
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haproxy-gw
+  template:
+    metadata:
+      labels:
+        app: haproxy-gw
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: megatron
+      containers:
+        - name: haproxy
+          image: haproxy:3.0
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: cfg
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: cfg
+          configMap:
+            name: haproxy-gw-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy-gw
+  namespace: ai
+spec:
+  selector:
+    app: haproxy-gw
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 31200

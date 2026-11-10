@@ -1,0 +1,68 @@
+# =============================================================================
+# Updated HAProxy ConfigMap — routes for all services
+# Replaces: configmap/02-haproxy-config.yaml
+#
+# Routes:
+#   /            → OpenWebUI (main UI)
+#   /v1/         → Qwen3-8B Agent (direct API access, optional)
+#   /gmail/      → Gmail MCP MCPO (direct tool testing, optional)
+#   /calendar/   → Calendar MCP MCPO (direct tool testing, optional)
+#
+# The /v1, /gmail, /calendar routes are optional and mainly useful for
+# debugging. In production, OpenWebUI handles all routing internally.
+# =============================================================================
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-gw-config
+  namespace: ai
+data:
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+      maxconn 4096
+
+    defaults
+      log global
+      mode http
+      option httplog
+      timeout connect 5s
+      timeout client  300s
+      timeout server  300s
+
+    # --- HTTP → HTTPS redirect ---
+    frontend fe_http
+      bind *:8080
+      http-request redirect scheme https code 301
+
+    # --- HTTPS termination ---
+    frontend fe_https
+      bind *:8443 ssl crt /etc/haproxy/tls/tls.pem
+
+      # Route by path prefix
+      acl is_agent_api path_beg /v1/
+      acl is_gmail     path_beg /gmail/
+      acl is_calendar  path_beg /calendar/
+
+      use_backend be_agent    if is_agent_api
+      use_backend be_gmail    if is_gmail
+      use_backend be_calendar if is_calendar
+      default_backend be_openwebui
+
+    # --- Backends ---
+    backend be_openwebui
+      balance roundrobin
+      server s1 open-webui.ai.svc.cluster.local:8080 check
+
+    backend be_agent
+      http-request replace-path /v1(.*) /v1\1
+      server s1 qwen3-8b-agent.ai.svc.cluster.local:8000 check
+
+    backend be_gmail
+      http-request replace-path /gmail(.*) \1
+      server s1 gmail-mcp.ai.svc.cluster.local:8100 check
+
+    backend be_calendar
+      http-request replace-path /calendar(.*) \1
+      server s1 gcal-mcp.ai.svc.cluster.local:8200 check

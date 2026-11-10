@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        gpu: dgx-spark
+      containers:
+        - name: open-webui
+          image: ghcr.io/open-webui/open-webui:ollama
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: USE_OLLAMA_DOCKER
+              value: "true"
+            - name: OLLAMA_BASE_URL
+              value: "/ollama"
+          volumeMounts:
+            - name: open-webui-data
+              mountPath: /app/backend/data
+            - name: open-webui-ollama
+              mountPath: /root/.ollama
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              nvidia.com/gpu: "1"
+      volumes:
+        - name: open-webui-data
+          persistentVolumeClaim:
+            claimName: open-webui-data
+        - name: open-webui-ollama
+          persistentVolumeClaim:
+            claimName: open-webui-ollama
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui
+  namespace: ai
+spec:
+  selector:
+    app: open-webui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+  
