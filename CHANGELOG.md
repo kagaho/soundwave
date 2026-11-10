@@ -2,6 +2,12 @@
 
 All entries describe sanitized reference snapshots. No live cluster validation is implied.
 
+## 2.1.0
+
+- Add the Hermes LLM Wiki + Obsidian integration, templates, skills, and scripts.
+- Add safe skill installation and configurable context reset instructions.
+- Keep personal vault content and runtime state outside Git.
+
 ## 2.0.0
 
 - Reorganize deployment references and add Hermes, speech tools, and agent experiments.

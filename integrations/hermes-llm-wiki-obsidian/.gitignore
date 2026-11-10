@@ -1,0 +1,36 @@
+# Secrets
+*secret*
+*.key
+*.crt
+*.pem
+*.token
+.env
+auth.json
+credentials.json
+*-token.json
+gcp-oauth.keys.json
+
+# Runtime data
+sessions/
+cache/
+logs/
+state.db
+*.db
+
+# User content / copyrighted sources
+raw/
+ebooks/
+pdfs/
+docx/
+*.epub
+*.pdf
+*.docx
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+
+# OS/editor
+.DS_Store
+__pycache__/

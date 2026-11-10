@@ -1,0 +1,29 @@
+# Hermes Active Wiki Context
+# This file is temporary and should be updated per task/query/project.
+
+task: unset
+
+mode: user-selected
+
+include: []
+
+exclude: []
+
+agent_stack:
+  primary: hermes
+  future:
+    - openhands
+
+selection_policy:
+  - Before wiki work, read _registry/wiki-registry.yaml.
+  - Present the available domains to the operator when no active context is selected.
+  - Ask the operator which domains should be included for the current task.
+  - Update this file with the selected domains.
+  - Use only included domains unless the operator explicitly expands scope.
+  - If include is empty, do not assume a domain automatically.
+
+instructions:
+  - Read this file before wiki work.
+  - If include is empty, list available domains from wiki-registry.yaml and ask the operator to choose.
+  - Prefer _shared for concepts used by more than one selected domain.
+  - Do not create duplicate entity or concept pages across domains without checking _shared first.

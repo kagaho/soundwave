@@ -2,7 +2,7 @@
 
 Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference, agents, speech, gateways, and MCP integrations.
 
-**Version 2.0.0. Private publication candidate awaiting owner review.** These are reference configurations and experiments, not a turnkey installer. Hardware, container versions, storage, and endpoints must be adapted to your environment.
+**Version 2.1.0. Private publication candidate awaiting owner review.** These are reference configurations and experiments, not a turnkey installer. Hardware, container versions, storage, and endpoints must be adapted to your environment.
 
 ## Start here
 
@@ -13,6 +13,7 @@ Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference,
 - [Hermes deployment](hermes/README.md)
 - [Speech tools](ASR/README.md)
 - `nanobot/`, `local-tools/`, `infra/`, `pod/` — additional experiments.
+- [Hermes LLM Wiki + Obsidian](integrations/hermes-llm-wiki-obsidian/README.md) — skills, vault templates, EPUB conversion, and deployment integration.
 
 1. Read the component guide and select only the workloads you need.
 2. Adapt node selectors, model images, storage paths, network addresses, and resource requirements. Hostnames are illustrative role names.

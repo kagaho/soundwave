@@ -1,0 +1,48 @@
+# Hermes LLM Wiki Registry
+# Purpose: define domain-specific wiki areas inside one Obsidian vault.
+
+vault:
+  root: /opt/data/wiki
+  mode: federated-single-vault
+  owner: the operator
+
+domains:
+  ai-infrastructure:
+    path: domains/ai-infrastructure
+    description: AI infrastructure, GPU clusters, inference platforms, AI factories, model serving.
+    tags: [ai-infra, gpu, inference, llm-serving, ai-factory, scaling]
+
+  elita-perceptor-energon:
+    path: domains/elita-perceptor-energon
+    description: Elita, Perceptor, Energon, Slack assistant flow, RAG, LangGraph orchestration.
+    tags: [elita, perceptor, energon, rag, slack, langgraph, agentic-ai]
+
+  openstack-kubernetes-gpu:
+    path: domains/openstack-kubernetes-gpu
+    description: OpenStack, Kubernetes, NVIDIA GPU runtime, containerd, Helm, K8s troubleshooting.
+    tags: [openstack, kubernetes, nvidia, gpu, containerd, helm, infra-debug]
+
+  palo-alto-docs:
+    path: domains/palo-alto-docs
+    description: Palo Alto Networks products, PAN-OS, Panorama, Prisma, firewall docs and command references.
+    tags: [palo-alto, pan-os, panorama, prisma, firewall, networking]
+
+  terraform-ansible-labs:
+    path: domains/terraform-ansible-labs
+    description: Terraform, Ansible, automation labs, IaC patterns, provider behavior and troubleshooting.
+    tags: [terraform, ansible, iac, automation, labs]
+
+  personal-learning:
+    path: domains/personal-learning
+    description: Personal study plans, learning notes, certifications, long-term skill development.
+    tags: [learning, study-plan, certifications, career]
+
+shared:
+  path: _shared
+  description: Cross-domain glossary, reusable entities, and concepts shared by multiple domains.
+
+registry_policy:
+  default_context: manual
+  cross_domain_links: allowed
+  duplicate_policy: prefer_shared_page_for_common_entities
+  raw_sources_policy: keep_global_under_raw
