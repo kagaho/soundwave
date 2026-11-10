@@ -1,0 +1,106 @@
+# TRT-LLM Qwen3-Coder - Megatron (DGX Spark)
+# Code-specialized LLM with TensorRT-LLM optimization
+# Port scheme: megatron 22001-22100
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qwen3-coder
+  namespace: ai
+  labels:
+    app: qwen3-coder
+    node: megatron
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qwen3-coder
+  template:
+    metadata:
+      labels:
+        app: qwen3-coder
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: megatron
+      containers:
+        - name: trtllm
+          image: nvcr.io/nvidia/tensorrt-llm/release:1.2.0rc6
+          imagePullPolicy: IfNotPresent
+          command: ["bash", "-c"]
+          args:
+            - |
+              hf download $MODEL_HANDLE && \
+              cat > /tmp/extra-llm-api-config.yml <<EOF
+              print_iter_log: false
+              kv_cache_config:
+                dtype: "auto"
+                free_gpu_memory_fraction: 0.7
+              cuda_graph_config:
+                enable_padding: true
+              disable_overlap_scheduler: true
+              EOF
+              trtllm-serve "$MODEL_HANDLE" \
+                --host 0.0.0.0 \
+                --max_batch_size 32 \
+                --trust_remote_code \
+                --port 22001 \
+                --extra_llm_api_options /tmp/extra-llm-api-config.yml
+          ports:
+            - containerPort: 22001
+              name: http
+          env:
+            - name: MODEL_HANDLE
+              value: "NVFP4/Qwen3-Coder-30B-A3B-Instruct-FP4"
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+            - name: dshm
+              mountPath: /dev/shm
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 22001
+            initialDelaySeconds: 600
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 22001
+            initialDelaySeconds: 300
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
+      volumes:
+        - name: hf-cache
+          hostPath:
+            path: /home/operator/.cache/huggingface
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-coder
+  namespace: ai
+spec:
+  selector:
+    app: qwen3-coder
+  ports:
+    - name: http
+      port: 22001
+      targetPort: 22001
+  type: ClusterIP

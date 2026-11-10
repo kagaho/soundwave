@@ -1,0 +1,13 @@
+# OpenClaw local dashboard (historical experiment)
+
+Do not commit dashboard authentication tokens or URLs containing `#token=`.
+
+Example SSH tunnel from your laptop to a private host:
+
+```bash
+ssh -N -L 18789:127.0.0.1:18789 <user>@<private-host>
+```
+
+Then open `http://127.0.0.1:18789/` and authenticate using the token or method configured **outside Git**.
+
+The previous dashboard token appeared in Git history. Rotate it if that service can still be reached; editing this file does not remove historical exposure.

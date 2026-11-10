@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thor-vllm-gptoss120b
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thor-vllm-gptoss120b
+  template:
+    metadata:
+      labels:
+        app: thor-vllm-gptoss120b
+    spec:
+      nodeName: shockwave
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: vllm
+          image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor
+          imagePullPolicy: IfNotPresent
+          command:
+            - vllm
+          args:
+            - serve
+            - openai/gpt-oss-120b
+            - --gpu-memory-utilization
+            - "0.8"
+          env:
+            - name: TIKTOKEN_ENCODINGS_BASE
+              value: /etc/encodings
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 8000
+              hostPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+            - name: tiktoken-cache
+              mountPath: /etc/encodings
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 120
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 18
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 6
+      volumes:
+        - name: hf-cache
+          hostPath:
+            path: /home/operator/.cache/huggingface
+            type: DirectoryOrCreate
+        - name: tiktoken-cache
+          hostPath:
+            path: /home/operator/.cache/tiktoken
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thor-vllm-gptoss120b
+  namespace: ai
+spec:
+  selector:
+    app: thor-vllm-gptoss120b
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  type: ClusterIP

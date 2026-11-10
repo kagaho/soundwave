@@ -1,0 +1,100 @@
+# Mistral 7B Instruct - Megatron (DGX Spark)
+# Function calling / Agent tasks
+# Port: 22002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mistral-7b
+  namespace: ai
+  labels:
+    app: mistral-7b
+    node: megatron
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mistral-7b
+  template:
+    metadata:
+      labels:
+        app: mistral-7b
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: megatron
+      runtimeClassName: nvidia
+      containers:
+        - name: trtllm
+          image: nvcr.io/nvidia/tensorrt-llm/release:1.2.0rc6
+          command: ["bash", "-c"]
+          args:
+            - |
+              hf download $MODEL_HANDLE && \
+              trtllm-serve "$MODEL_HANDLE" \
+                --host 0.0.0.0 \
+                --port 22002 \
+                --max_batch_size 16 \
+                --trust_remote_code
+          env:
+            - name: MODEL_HANDLE
+              value: "mistralai/Mistral-7B-Instruct-v0.3"
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+          ports:
+            - containerPort: 22002
+              name: http
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+            - name: dshm
+              mountPath: /dev/shm
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 22002
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 22002
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 22002
+            periodSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: hf-cache
+          hostPath:
+            path: /home/operator/.cache/huggingface
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi
+      imagePullSecrets:
+        - name: ngc-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mistral-7b
+  namespace: ai
+spec:
+  selector:
+    app: mistral-7b
+  ports:
+    - name: http
+      port: 22002
+      targetPort: 22002
+  type: ClusterIP

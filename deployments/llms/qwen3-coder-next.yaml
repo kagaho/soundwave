@@ -1,0 +1,94 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qwen3-coder-next
+  namespace: ai
+  labels:
+    app: qwen3-coder-next
+    workload: coding-llm
+    node: megatron
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # single GPU, no rolling
+  selector:
+    matchLabels:
+      app: qwen3-coder-next
+  template:
+    metadata:
+      labels:
+        app: qwen3-coder-next
+        workload: coding-llm
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: megatron
+      hostNetwork: true     # contorna DNS issue do docker daemon; libera vllm na porta do host
+      dnsPolicy: ClusterFirstWithHostNet  # mantém resolução de *.svc.cluster.local
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: vllm
+          image: nvcr.io/nvidia/vllm:26.04-py3
+          imagePullPolicy: IfNotPresent
+          command: ["vllm"]
+          args:
+            - serve
+            - Qwen/Qwen3-Coder-Next-FP8
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8002"             # 8001 já usado pelo smoke test se tu não derrubou; 8002 livre
+            - --tensor-parallel-size
+            - "1"
+            - --max-model-len
+            - "65536"
+            - --gpu-memory-utilization
+            - "0.80"             # margem maior vs smoke (estava 0.85, com 104/119GB já no limite)
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - qwen3_coder
+            - --enable-prefix-caching
+            - --served-model-name
+            - Qwen/Qwen3-Coder-Next-FP8
+          env:
+            - name: HF_HOME
+              value: /root/.cache/huggingface
+          ports:
+            - containerPort: 8002
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: huggingface-cache
+              mountPath: /root/.cache/huggingface
+          securityContext:
+            capabilities:
+              drop: ["ALL"]
+            allowPrivilegeEscalation: false
+          # Sem readiness/liveness probes — cold start em 80B MoE leva minutos
+          # vLLM em Spark cold start ~1-3min; readinessProbe agressiva mata o pod
+      volumes:
+        - name: huggingface-cache
+          hostPath:
+            path: /home/operator/.cache/huggingface
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-coder-next
+  namespace: ai
+  labels:
+    app: qwen3-coder-next
+spec:
+  type: ClusterIP
+  selector:
+    app: qwen3-coder-next
+  ports:
+    - name: http
+      port: 8000              # porta do service (consumidores chamam :8000)
+      targetPort: 8002        # porta do pod (vllm escuta nessa)
+      protocol: TCP
+

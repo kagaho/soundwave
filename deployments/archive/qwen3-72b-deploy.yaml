@@ -1,0 +1,127 @@
+# =============================================================================
+# Qwen3-72B Deployment — shockwave (Jetson Thor)
+# Fixed: llama.cpp b8502, --jinja, Qwen3 sampling params, 2 slots
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qwen3-72b
+  namespace: ai
+  labels:
+    app: qwen3-72b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qwen3-72b
+  template:
+    metadata:
+      labels:
+        app: qwen3-72b
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: shockwave
+      containers:
+      - name: llama-server
+        image: llama-server:b8502-jetson
+        imagePullPolicy: Never
+        securityContext:
+          privileged: true
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/lib/aarch64-linux-gnu/nvidia:/usr/local/cuda/lib64"
+        args:
+        # --- Model ---
+        - "--model"
+        - "/models/Qwen3-72B-Instruct.Q4_K_M.gguf"
+        - "--alias"
+        - "qwen3-72b"
+        # --- Jinja chat template (CRITICAL for Qwen3) ---
+        - "--jinja"
+        # --- Reasoning format (Qwen3 uses deepseek-style <think> tags) ---
+        - "--reasoning-format"
+        - "deepseek"
+        # --- GPU offload (all layers) ---
+        - "-ngl"
+        - "99"
+        # --- Flash attention ---
+        - "-fa"
+        # --- Context & slots (2 slots x 16K = 32K KV cache total) ---
+        - "--ctx-size"
+        - "16384"
+        - "--parallel"
+        - "2"
+        # --- Prevent context shifting (avoids silent quality loss) ---
+        - "--no-context-shift"
+        # --- Qwen3 recommended sampling defaults ---
+        - "--temp"
+        - "0.6"
+        - "--top-k"
+        - "20"
+        - "--top-p"
+        - "0.95"
+        - "--min-p"
+        - "0"
+        # --- Server config ---
+        - "--host"
+        - "0.0.0.0"
+        - "--port"
+        - "21001"
+        # --- Metrics endpoint (optional, handy for monitoring) ---
+        - "--metrics"
+        ports:
+        - containerPort: 21001
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: models
+          mountPath: /models
+          readOnly: true
+        - name: nvidia-libs
+          mountPath: /usr/lib/aarch64-linux-gnu/nvidia
+          readOnly: true
+        resources:
+          limits:
+            memory: "100Gi"
+          requests:
+            memory: "60Gi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 21001
+          initialDelaySeconds: 120
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 21001
+          initialDelaySeconds: 180
+          periodSeconds: 30
+      volumes:
+      - name: models
+        hostPath:
+          path: /home/operator/models/qwen3-72b
+          type: Directory
+      - name: nvidia-libs
+        hostPath:
+          path: /usr/lib/aarch64-linux-gnu/nvidia
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-72b
+  namespace: ai
+spec:
+  selector:
+    app: qwen3-72b
+  ports:
+  - port: 21001
+    targetPort: 21001
+    protocol: TCP
+    name: http
+  type: ClusterIP

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes
+  namespace: ai
+  labels:
+    app: hermes
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hermes
+  template:
+    metadata:
+      labels:
+        app: hermes
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thundercracker
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: hermes
+          image: localhost/hermes-agent:v0.13.0
+          imagePullPolicy: IfNotPresent
+          # Idle mode. Trocar pra "hermes gateway" quando configurar Telegram/Discord.
+          command: ["sh", "-c"]
+          args: ["trap 'exit 0' TERM; tail -f /dev/null"]
+          stdin: true
+          tty: true
+          workingDir: /workspace
+          env:
+            - name: HERMES_HOME
+              value: /opt/data
+          envFrom:
+            - secretRef:
+                name: hermes-secrets
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: workspace
+              mountPath: /workspace
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              memory: "2Gi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hermes-data
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: agent-sandbox

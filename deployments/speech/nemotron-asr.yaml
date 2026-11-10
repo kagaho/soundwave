@@ -1,0 +1,97 @@
+# Nemotron ASR Streaming - Soundwave (RTX 4090)
+# Speech-to-Text service
+# First startup builds TensorRT engines (~7-10 min), cached after
+# Port scheme: soundwave 20001-20100
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemotron-asr
+  namespace: ai
+  labels:
+    app: nemotron-asr
+    node: soundwave
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nemotron-asr
+  template:
+    metadata:
+      labels:
+        app: nemotron-asr
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: soundwave
+      imagePullSecrets:
+        - name: ngc-secret
+      containers:
+        - name: riva-asr
+          image: nvcr.io/nim/nvidia/nemotron-asr-streaming:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NGC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ngc-api-key
+                  key: NGC_API_KEY
+            - name: NIM_TAGS_SELECTOR
+              value: "name=nemotron-asr-streaming,mode=online"
+            - name: NIM_HTTP_API_PORT
+              value: "20001"
+            - name: NIM_GRPC_API_PORT
+              value: "20051"
+          ports:
+            - containerPort: 20051
+              name: grpc
+              protocol: TCP
+            - containerPort: 20001
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: nim-cache
+              mountPath: /opt/nim/.cache
+          livenessProbe:
+            httpGet:
+              path: /v1/health/live
+              port: 20001
+            initialDelaySeconds: 300
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /v1/health/ready
+              port: 20001
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
+      volumes:
+        - name: nim-cache
+          hostPath:
+            path: /home/operator/.cache/nim
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nemotron-asr
+  namespace: ai
+spec:
+  selector:
+    app: nemotron-asr
+  ports:
+    - name: grpc
+      port: 20051
+      targetPort: 20051
+      protocol: TCP
+    - name: http
+      port: 20001
+      targetPort: 20001
+      protocol: TCP
+  type: ClusterIP

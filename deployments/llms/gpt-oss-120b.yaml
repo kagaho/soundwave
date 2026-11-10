@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpt-oss-120b
+  namespace: ai
+  labels:
+    app: gpt-oss-120b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gpt-oss-120b
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gpt-oss-120b
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: shockwave
+      containers:
+        - name: vllm
+          image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor
+          command: ["vllm"]
+          args:
+            - "serve"
+            - "openai/gpt-oss-120b"
+            - "--gpu-memory-utilization"
+            - "0.8"
+          env:
+            - name: TIKTOKEN_ENCODINGS_BASE
+              value: /etc/encodings
+          ports:
+            - containerPort: 8000
+              name: http
+          volumeMounts:
+            - name: huggingface-cache
+              mountPath: /root/.cache/huggingface
+            - name: tiktoken-cache
+              mountPath: /etc/encodings
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+      runtimeClassName: nvidia
+      volumes:
+        - name: huggingface-cache
+          hostPath:
+            path: /home/operator/.cache/huggingface
+            type: Directory
+        - name: tiktoken-cache
+          hostPath:
+            path: /home/operator/.cache/tiktoken
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gpt-oss-120b
+  namespace: ai
+spec:
+  type: ClusterIP
+  selector:
+    app: gpt-oss-120b
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: nvidia
+handler: nvidia

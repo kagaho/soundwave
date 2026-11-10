@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: soundwave-nanobot
+  namespace: ai
+  labels:
+    app: soundwave-nanobot
+spec:
+  type: ClusterIP
+  selector:
+    app: soundwave-nanobot
+  ports:
+    - name: api
+      port: 8900
+      targetPort: 8900
+      protocol: TCP
+    - name: gateway
+      port: 18790
+      targetPort: 18790
+      protocol: TCP

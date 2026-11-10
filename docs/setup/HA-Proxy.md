@@ -1,7 +1,7 @@
 # 1- Install HAProxy Kubernetes Ingress Controller (Helm)
 
   
-![HAProxy Ingress Diagram](assets/HAProxy-02.png)
+![HAProxy Ingress Diagram](../../assets/HAProxy-02.png)
   
 
 - First add the Helm repo:  
@@ -65,4 +65,4 @@ kubectl apply -f ingress.yaml
 
 ### Service as ClusterIP (or NodePort/LoadBalancer)
 
-![HAProxy Cluster IP with Healthcheck](assets/HAProxy-03.png)
+![HAProxy Cluster IP with Healthcheck](../../assets/HAProxy-03.png)

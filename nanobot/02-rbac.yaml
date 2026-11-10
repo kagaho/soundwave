@@ -1,0 +1,60 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: soundwave-nanobot
+  namespace: ai
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: soundwave-nanobot
+  namespace: ai
+rules:
+  # Read access ao próprio namespace ai — pra inspecionar pods/services/etc
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log", "pods/status"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: soundwave-nanobot
+  namespace: ai
+subjects:
+  - kind: ServiceAccount
+    name: soundwave-nanobot
+    namespace: ai
+roleRef:
+  kind: Role
+  name: soundwave-nanobot
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRole pra ver nodes (kubectl get nodes pede ClusterRole, namespaces são scope errado)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: soundwave-nanobot-nodes-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: soundwave-nanobot-nodes-reader
+subjects:
+  - kind: ServiceAccount
+    name: soundwave-nanobot
+    namespace: ai
+roleRef:
+  kind: ClusterRole
+  name: soundwave-nanobot-nodes-reader
+  apiGroup: rbac.authorization.k8s.io

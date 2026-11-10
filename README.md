@@ -2,14 +2,17 @@
 
 Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference, agents, speech, gateways, and MCP integrations.
 
-**Version 1.0.0. Private publication candidate awaiting owner review.** These are reference configurations and experiments, not a turnkey installer. Hardware, container versions, storage, and endpoints must be adapted to your environment.
+**Version 2.0.0. Private publication candidate awaiting owner review.** These are reference configurations and experiments, not a turnkey installer. Hardware, container versions, storage, and endpoints must be adapted to your environment.
 
 ## Start here
 
-- [Cluster setup](kubernetes-multiarch-install-guide-flannel.md)
-- [Gateway setup](HA-Proxy.md)
-- [Gmail and Calendar MCP architecture](phase1-multi-agent-deployment.md)
-- `deployments/`, `configmap/`, `volumes/` — original manifest examples.
+- [Cluster setup](docs/setup/kubernetes-multiarch-install-guide-flannel.md)
+- [Gateway setup](docs/setup/HA-Proxy.md)
+- [Deployment catalog](deployments/README.md)
+- [Gmail and Calendar MCP architecture](docs/architecture/phase1-multi-agent-deployment.md)
+- [Hermes deployment](hermes/README.md)
+- [Speech tools](ASR/README.md)
+- `nanobot/`, `local-tools/`, `infra/`, `pod/` — additional experiments.
 
 1. Read the component guide and select only the workloads you need.
 2. Adapt node selectors, model images, storage paths, network addresses, and resource requirements. Hostnames are illustrative role names.

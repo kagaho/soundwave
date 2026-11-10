@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qwen3-72b
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qwen3-72b
+  template:
+    metadata:
+      labels:
+        app: qwen3-72b
+    spec:
+      nodeName: shockwave
+      containers:
+        - name: llama-server
+          image: minimax-llama:latest
+          imagePullPolicy: Never
+          args:
+            - --model
+            - /models/Qwen3-72B-Instruct.Q4_K_M.gguf
+            - --alias
+            - qwen3-72b
+            - --n-gpu-layers
+            - "999"
+            - --ctx-size
+            - "32768"
+            - --threads
+            - "8"
+            - --port
+            - "8000"
+            - --host
+            - "0.0.0.0"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/cuda/lib:/usr/lib/nvidia"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: model-data
+              mountPath: /models
+            - name: cuda-libs
+              mountPath: /usr/local/cuda/lib
+              readOnly: true
+            - name: nvidia-libs
+              mountPath: /usr/lib/nvidia
+              readOnly: true
+            - name: dev
+              mountPath: /dev
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: model-data
+          hostPath:
+            path: /home/operator/models/qwen3-72b
+            type: Directory
+        - name: cuda-libs
+          hostPath:
+            path: /usr/local/cuda-13.0/targets/sbsa-linux/lib
+            type: Directory
+        - name: nvidia-libs
+          hostPath:
+            path: /usr/lib/aarch64-linux-gnu/nvidia
+            type: Directory
+        - name: dev
+          hostPath:
+            path: /dev
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-72b
+  namespace: ai
+spec:
+  selector:
+    app: qwen3-72b
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

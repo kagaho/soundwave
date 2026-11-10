@@ -1,0 +1,96 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soundwave-nanobot
+  namespace: ai
+  labels:
+    app: soundwave-nanobot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: soundwave-nanobot
+  template:
+    metadata:
+      labels:
+        app: soundwave-nanobot
+    spec:
+      serviceAccountName: soundwave-nanobot
+      nodeSelector:
+        kubernetes.io/hostname: thundercracker
+      dnsPolicy: ClusterFirst
+      initContainers:
+        - name: setup-kubeconfig
+          image: docker.io/library/soundwave-nanobot:v1
+          imagePullPolicy: Never
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /kube
+              cat > /kube/config <<'EOF'
+              apiVersion: v1
+              kind: Config
+              clusters:
+              - name: in-cluster
+                cluster:
+                  server: https://10.96.0.1:443
+                  certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              contexts:
+              - name: in-cluster
+                context:
+                  cluster: in-cluster
+                  user: serviceaccount
+                  namespace: ai
+              current-context: in-cluster
+              users:
+              - name: serviceaccount
+                user:
+                  tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              EOF
+              chmod 600 /kube/config
+              echo "kubeconfig written:"
+              cat /kube/config
+          volumeMounts:
+            - name: kube-config
+              mountPath: /kube
+      containers:
+        - name: nanobot
+          image: docker.io/library/soundwave-nanobot:v1
+          imagePullPolicy: Never
+          command:
+            - nanobot
+            - gateway
+            - --config
+            - /workspace/.nanobot/config.json
+          ports:
+            - containerPort: 8900
+              name: api
+              protocol: TCP
+            - containerPort: 18790
+              name: gateway
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Europe/Amsterdam
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: soundwave-nanobot-telegram
+                  key: TELEGRAM_BOT_TOKEN
+          volumeMounts:
+            - mountPath: /workspace/.nanobot
+              name: workspace
+            - mountPath: /root/.kube
+              name: kube-config
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: nanobot-workspace
+        - name: kube-config
+          emptyDir: {}

@@ -1,0 +1,10 @@
+# Example Hermes Infrastructure Memory
+
+This file is a placeholder for a *new* deployment. Do not version real user preferences, private domains, server addresses, credentials or operational secrets.
+
+- Cluster name: <cluster-name>
+- Inference endpoint: <private-api-endpoint>
+- Gateway mode: <chosen-gateway>
+- Node profiles: <documented-hardware-profiles>
+
+Store private agent memory outside this public repository.
