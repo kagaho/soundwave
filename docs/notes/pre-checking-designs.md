@@ -31,7 +31,7 @@ OCI Container:   App  →  Host OS kernel  →  Hardware
         - LXC shares the host's kernel but isolates the userspace (init system, filesystem, processes). It feels like a full OS but the kernel underneath is still the host's.  
         - An OCI container also shares the host kernel but only isolates a single process/app — no init system, no full OS feel.  
 
-![implications](pre-checking-designs.md)
+![Runtime isolation and performance comparison](../../assets/implications.png)
 
 
 Load distribuition:

@@ -1,5 +1,14 @@
 # Soundwave
 
+<p align="center">
+  <strong>Multi-agent AI framework and ecosystem</strong>
+</p>
+
+<p align="center">
+  <img src="assets/title.svg" alt="Till All Are One" width="1200"><br><br>
+  <img src="assets/Soundwave.webp" alt="Soundwave" width="1600">
+</p>
+
 Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference, agents, speech, gateways, and MCP integrations.
 
 **Version 2.1.0. Private publication candidate awaiting owner review.** These are reference configurations and experiments, not a turnkey installer. Hardware, container versions, storage, and endpoints must be adapted to your environment.
@@ -22,6 +31,10 @@ Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference,
 
 ## Reference architecture
 
+The original diagrams document the lab architecture and its design phases. Model placement and addresses reflect those snapshots; adapt them to your environment.
+
+![Soundwave Kubernetes cluster topology](assets/excalidraw-1-soundwave.png)
+
 | Logical node | Reference hardware | Role |
 | --- | --- | --- |
 | soundwave | x86_64, RTX 4090 | Control plane and GPU/speech experiments |
@@ -30,6 +43,18 @@ Self-hosted AI infrastructure for a heterogeneous Kubernetes lab: GPU inference,
 | thundercracker | x86_64, CPU | Agents, MCP adapters, and utilities |
 
 Clients reach the gateway and UI; inference and MCP services communicate inside the cluster. Historical guides describe different model placements. Their deployment status is not inferred from the repository. LangGraph routing and additional modalities remain design proposals unless a component explicitly implements them.
+
+### Open WebUI and model backends
+
+![Open WebUI, gateway, model backends, and persistent storage](assets/openweb-k8s.png)
+
+### Agents and MCP
+
+The diagram shows the Phase 1 Gmail/Calendar MCP flow and the proposed Phase 2 orchestration layer.
+
+![Soundwave agent and MCP architecture](assets/phase1.png)
+
+The [image library](assets/) also contains the HAProxy diagrams and runtime comparison.
 
 ## Releases and validation
 
